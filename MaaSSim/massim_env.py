@@ -5,7 +5,9 @@ import time
 from gym import spaces
 from gym.core import Env
 from numpy import float64
+from stable_baselines3 import DQN
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.dqn import MlpPolicy
 
 from MaaSSim.controllers.gym_api_controller import GymApiControllerState, ACCEPT, DECLINE
 from MaaSSim.simulators import prepare_gym_simulator
@@ -47,9 +49,13 @@ class MaaSSimEnv(Env):
         seed: Optional[int] = None,
         options: Optional[dict] = None,
     ):
+        if self.sim_daemon is not None and self.sim_daemon.is_alive():
+            self._close_simulation()
         self.sim_daemon = threading.Thread(
             target=self.sim.make_and_run,
         )
+        self.done = False
+        self.state.reward = 0.
         self.sim_daemon.start()
         self._wait_for_call_to_action()
         return self.state.observation
@@ -67,6 +73,9 @@ class MaaSSimEnv(Env):
         self._cleanup_events()
         return current_observation, self.state.reward, self.done, {}
 
+    def close(self):
+        self._close_simulation()
+
     def _wait_for_call_to_action(self) -> None:
         # wait for action needed event or simulator finish
         while not (self.user_controller_action_needed.is_set() or self.simulation_finished.is_set()):
@@ -76,12 +85,19 @@ class MaaSSimEnv(Env):
         if self.user_controller_action_needed.is_set():
             # clear action needed event
             self.user_controller_action_needed.clear()
-        elif self.simulation_finished.is_set():
+        if self.simulation_finished.is_set():
             self.done = True
             self.simulation_finished.clear()
 
+    def _close_simulation(self) -> None:
+        while not self.simulation_finished.is_set():
+            time.sleep(.01)
+            self.user_controller_action_ready.set()
+        self.sim_daemon.join()
+        self._cleanup_events()
 
-if __name__ == '__main__':
+
+def test_run() -> None:
     env = MaaSSimEnv()
     check_env(env)
     env.reset()
@@ -89,3 +105,19 @@ if __name__ == '__main__':
     while not done:
         _, _, done, _ = env.step(False)
     env.sim_daemon.join()
+
+
+def test_train() -> None:
+    env = MaaSSimEnv()
+    model = DQN(MlpPolicy, env, verbose=1)
+    model.learn(total_timesteps=10000)
+
+    obs = env.reset()
+    for i in range(1000):
+        action, _states = model.predict(obs)
+        obs, rewards, dones, info = env.step(action)
+        env.render()
+
+
+if __name__ == '__main__':
+    test_train()
