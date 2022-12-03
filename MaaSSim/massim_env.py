@@ -23,6 +23,7 @@ class MaaSSimEnv(Env):
         self.simulation_finished = threading.Event()
         self.state = GymApiControllerState()
         self.sim = prepare_gym_simulator(
+            config="data/gym_config_delft.json",
             user_controller_action_needed=self.user_controller_action_needed,
             user_controller_action_ready=self.user_controller_action_ready,
             simulation_finished=self.simulation_finished,
@@ -109,7 +110,7 @@ def test_run() -> None:
 
 def test_train() -> None:
     env = MaaSSimEnv()
-    model = DQN(MlpPolicy, env, verbose=1)
+    model = DQN(MlpPolicy, env, verbose=1, tensorboard_log="./dqn_maassim_tensorboard/")
     model.learn(total_timesteps=10000)
 
     obs = env.reset()
