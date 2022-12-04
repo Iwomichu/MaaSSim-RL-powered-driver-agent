@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import random
 import threading
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ def create_observation_from_input(veh: VehicleAgent, offer: Offer) -> Observatio
 
 @dataclass
 class GymApiControllerState:
+    current_offer: Optional[Offer] = None
     reward: float = 0.
     action: bool = ACCEPT
     observation: Optional[Observation] = None
@@ -53,6 +55,7 @@ class GymApiController:
         self.state = state
 
     def incoming_offer_decision(self, veh: VehicleAgent, offer: Offer) -> bool:
+        self.state.current_offer = offer
         self.state.observation = create_observation_from_input(veh, offer)
         # signals to GymAPI environment that action needs to be determined
         self.user_controller_action_needed.set()

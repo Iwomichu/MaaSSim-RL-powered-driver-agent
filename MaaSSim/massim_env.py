@@ -7,9 +7,10 @@ from gym.core import Env
 from numpy import float64
 from stable_baselines3 import DQN
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.dqn import MlpPolicy
+from stable_baselines3.dqn import MlpPolicy, MultiInputPolicy
 
 from MaaSSim.controllers.gym_api_controller import GymApiControllerState, ACCEPT, DECLINE
+from MaaSSim.decisions import OfferStatus
 from MaaSSim.simulators import prepare_gym_simulator
 
 
@@ -62,12 +63,13 @@ class MaaSSimEnv(Env):
         return self.state.observation
 
     def step(self, action: int):
+        offer = self.state.current_offer
         self.state.action = self.action_to_decision[action]
-        if self.state.action == ACCEPT:
-            self.state.reward += float(self.state.observation['offer_fare'])
         # trigger action ready event
         self.user_controller_action_ready.set()
         self._wait_for_call_to_action()
+        if offer['status'] == OfferStatus.ACCEPTED:
+            self.state.reward = offer['fare']
         current_observation = self.state.observation
         assert current_observation is not None
         print(current_observation)
@@ -110,13 +112,13 @@ def test_run() -> None:
 
 def test_train() -> None:
     env = MaaSSimEnv()
-    model = DQN(MlpPolicy, env, verbose=1, tensorboard_log="./dqn_maassim_tensorboard/")
+    model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log="./dqn_maassim_tensorboard/")
     model.learn(total_timesteps=10000)
 
     obs = env.reset()
     for i in range(1000):
         action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(action)
+        obs, rewards, dones, info = env.step(int(action))
         env.render()
 
 
