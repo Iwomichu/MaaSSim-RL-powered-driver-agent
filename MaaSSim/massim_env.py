@@ -38,6 +38,9 @@ class MaaSSimEnv(Env):
             "offer_fare": spaces.Box(low=0., high=300., shape=(1,), dtype=float64),
             "offer_travel_time": spaces.Box(low=0., high=300., shape=(1,), dtype=float64),
             "offer_wait_time": spaces.Box(low=0., high=300., shape=(1,), dtype=float64),
+            "vehicle_current_cords": spaces.Box(low=0., high=180., shape=(1, 2), dtype=float64),
+            "offer_origin_cords": spaces.Box(low=0., high=180., shape=(1, 2), dtype=float64),
+            "offer_target_cords": spaces.Box(low=0., high=180., shape=(1, 2), dtype=float64),
         })
         self.action_space = spaces.Discrete(2)
         self.action_to_decision = {
