@@ -1,3 +1,4 @@
+import logging
 import threading
 from typing import Optional
 
@@ -76,6 +77,7 @@ class MaaSSimEnv(Env):
         return current_observation, self.state.reward, self.done, {}
 
     def close(self):
+        logging.warning("Closing the simulation")
         self._close_simulation()
 
     def _wait_for_call_to_action(self) -> None:
@@ -113,6 +115,7 @@ def test_train() -> None:
     env = MaaSSimEnv()
     model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log="./dqn_maassim_tensorboard/")
     model.learn(total_timesteps=10)
+    env.close()
 
 
 if __name__ == '__main__':
