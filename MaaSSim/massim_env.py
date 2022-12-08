@@ -112,13 +112,7 @@ def test_run() -> None:
 def test_train() -> None:
     env = MaaSSimEnv()
     model = DQN("MultiInputPolicy", env, verbose=1, tensorboard_log="./dqn_maassim_tensorboard/")
-    model.learn(total_timesteps=10000)
-
-    obs = env.reset()
-    for i in range(1000):
-        action, _states = model.predict(obs)
-        obs, rewards, dones, info = env.step(int(action))
-        env.render()
+    model.learn(total_timesteps=10)
 
 
 if __name__ == '__main__':
