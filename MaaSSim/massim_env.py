@@ -7,7 +7,6 @@ from gym.core import Env
 from numpy import float64
 from stable_baselines3 import DQN
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.dqn import MlpPolicy, MultiInputPolicy
 
 from MaaSSim.controllers.gym_api_controller import GymApiControllerState, ACCEPT, DECLINE
 from MaaSSim.decisions import OfferStatus
